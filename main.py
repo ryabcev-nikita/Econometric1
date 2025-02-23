@@ -18,26 +18,6 @@ data = {
 
 df = pd.DataFrame(data)
 
-# Корреляционная матрица
-correlation_matrix = df[['Доллар', 'Евро', 'Иена', 'Фунт']].corr()
-print(correlation_matrix)
-
-# Функция для теста Фаррара – Глоубера
-def farra_glob_test_dollar(X, y):
-    X = sm.add_constant(X)
-    model = sm.OLS(y, X).fit()
-    r_squared = model.rsquared
-    n = len(y)
-    k = X.shape[1] - 1  # количество независимых переменных
-    f_stat = (r_squared / (1 - r_squared)) * ((n - k - 1) / k)
-    return f_stat
-
-# Проверка мультиколлинеарности
-X = df[['Евро', 'Иена', 'Фунт']]
-y = df['Доллар']
-f_stat = farra_glob_test_dollar(X, y)
-print(f"F-статистика: {f_stat}")
-
 # Функция для теста Фаррара – Глоубера
 def farra_glob_test(X, y):
     X = sm.add_constant(X)
