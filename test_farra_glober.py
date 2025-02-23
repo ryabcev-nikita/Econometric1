@@ -1,11 +1,12 @@
+import math
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib
-from scipy.stats import chi2
-from statsmodels.stats.outliers_influence import variance_inflation_factor
+from scipy.stats import chi2, f, t
+
 matplotlib.use('TkAgg')  # или 'Qt5Agg'
 
 # Данные
@@ -17,6 +18,7 @@ data = {
 }
 
 df = pd.DataFrame(data)
+df = df[['Евро', 'Иена', 'Фунт']]
 
 # 1) Построение матрицы межфакторных корреляций
 correlation_matrix = df.corr()
@@ -36,7 +38,7 @@ print(f"\nОпределитель матрицы: {determinant}")
 # 2) Вычисление статистики Фаррара-Глоубера
 n = len(df)  # количество наблюдений
 k = df.shape[1]  # количество факторов
-farrar_glober_statistic = n * determinant
+farrar_glober_statistic = -1*(n-1-1/6*(2*k+5)) * math.log(determinant)
 print(f"\nСтатистика Фаррара-Глоубера: {farrar_glober_statistic}")
 
 # Табличное значение для Хи-квадрат
@@ -56,6 +58,14 @@ sns.heatmap(inverse_matrix, annot=True, cmap='coolwarm', fmt=".2f")
 plt.title('Обратная матрица')
 plt.show()
 
+# Степени свободы
+df1 = 2
+df2 = 9
+
+# Находим критическое значение F
+f_critical = f.ppf(1 - alpha, df1, df2)
+
+print(f"Критическое значение F при уровне значимости {alpha}: {f_critical}")
 # Вычисление F-критериев
 f_statistics = np.diag(inverse_matrix)
 print("\nF-критерии:")
@@ -100,3 +110,27 @@ plt.figure(figsize=(8, 6))
 sns.heatmap(partial_corr_matrix, annot=True, cmap='coolwarm', fmt=".2f")
 plt.title('Матрица частных корреляций')
 plt.show()
+
+ddf = n - k - 1  # Степени свободы
+
+# Функция для расчета t-критерия
+def calculate_t_statistic(r, n, k):
+    return (r * np.sqrt(n - k - 1)) / np.sqrt(1 - r**2)
+
+# Расчет t-критериев
+t_statistics = pd.DataFrame(index=partial_corr_matrix.index, columns=partial_corr_matrix.columns)
+
+for i in range(len(partial_corr_matrix)):
+    for j in range(len(partial_corr_matrix)):
+        if i != j:
+            r = partial_corr_matrix.iloc[i, j]  # Используем iloc для доступа по индексам
+            t_statistics.iloc[i, j] = calculate_t_statistic(r, n, k)
+
+print("t-критерии для коэффициентов частной корреляции:")
+print(t_statistics)
+
+# Критическое значение t
+alpha = 0.05
+t_critical = t.ppf(1 - alpha/2, ddf)
+
+print(f"\nКритическое значение t при уровне значимости {alpha}: {t_critical}")

@@ -5,6 +5,7 @@ from statsmodels.stats.stattools import durbin_watson
 import statsmodels.api as sm
 
 import matplotlib
+
 matplotlib.use('TkAgg')  # или 'Qt5Agg'
 
 # Данные
@@ -18,44 +19,6 @@ data = {
 
 df = pd.DataFrame(data)
 
-# Функция для теста Фаррара – Глоубера
-def farra_glob_test(X, y):
-    X = sm.add_constant(X)
-    model = sm.OLS(y, X).fit()
-    return model
-
-# Проверка мультиколлинеарности между евро, иеной и фунтом
-variables = ['Евро', 'Иена', 'Фунт']
-results = {}
-
-for var in variables:
-    X = df[variables].drop(var, axis=1)  # Убираем одну переменную
-    y = df[var]
-    model = farra_glob_test(X, y)
-    results[var] = model.summary()
-
-# Вывод результатов
-for var, result in results.items():
-    print(f"Результаты для {var}:\n{result}\n")
-
-# Линейная регрессия
-X = df[['Евро', 'Иена', 'Фунт']]
-y = df['Доллар']
-X = sm.add_constant(X)  # добавляем константу
-
-model = sm.OLS(y, X).fit()
-print(model.summary())
-
-# Влияние факторов
-coefficients = model.params[1:]  # исключаем константу
-print("Коэффициенты влияния факторов:")
-print(coefficients)
-
-
-# Остатки модели
-residuals = model.resid
-dw_stat = durbin_watson(residuals)
-print(f"Статистика Дурбина-Уотсона: {dw_stat}")
 
 # Функция для построения и вывода результатов регрессионной модели
 def run_regression(dependent_var, independent_vars):
@@ -65,10 +28,12 @@ def run_regression(dependent_var, independent_vars):
     model = sm.OLS(y, X).fit()
     print(f"Результаты регрессии для {dependent_var} от {', '.join(independent_vars)}:\n")
     print(model.summary())
-    print("\n" + "="*80 + "\n")
+    print("\n" + "=" * 80 + "\n")
     # Графики
     # остатков
     residuals = model.resid
+    dw_stat = durbin_watson(residuals)
+    print(f"Статистика Дурбина-Уотсона: {dw_stat}")
 
     # Гистограмма остатков
     plt.figure(figsize=(12, 6))
@@ -87,6 +52,7 @@ def run_regression(dependent_var, independent_vars):
     plt.show()
 
     return model
+
 
 # 1. Регрессия: Доллар от Евро
 model_euro = run_regression('Доллар', ['Евро'])
